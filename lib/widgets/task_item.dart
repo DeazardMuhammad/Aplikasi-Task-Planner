@@ -64,73 +64,125 @@ class TaskItem extends StatelessWidget {
 
   void _showEditDialog(BuildContext context) {
     final TextEditingController titleController = TextEditingController(text: task.title);
-    final TextEditingController priorityController = TextEditingController(text: task.priority);
+    String selectedPriority = task.priority;
+    String selectedCategory = task.category;
     DateTime selectedDate = task.deadline;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Edit Task'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(hintText: 'Task Title'),
-              ),
-              DropdownButton<String>(
-                value: task.priority,
-                items: <String>['Tinggi', 'Sedang', 'Rendah']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  priorityController.text = newValue!;
-                },
-              ),
-              SizedBox(height: 10),
-              GestureDetector(
-                child: Text(
-                  DateFormat.yMMMd().format(selectedDate),
-                  style: TextStyle(fontSize: 18, color: Colors.blue),
+        return StatefulBuilder( // Menggunakan StatefulBuilder untuk memperbarui state di dalam dialog
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Edit Task'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: InputDecoration(labelText: 'Judul Tugas'),
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text('Prioritas:'),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: DropdownButton<String>(
+                            value: selectedPriority,
+                            items: <String>['Tinggi', 'Sedang', 'Rendah']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedPriority = newValue;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text('Kategori:'),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: DropdownButton<String>(
+                            value: selectedCategory,
+                            items: <String>['Kuliah', 'Organisasi', 'Lab']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedCategory = newValue;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Text('Select Deadline:'),
+                    SizedBox(height: 10),
+                    GestureDetector(
+                      child: Text(
+                        DateFormat.yMMMd().format(selectedDate),
+                        style: TextStyle(fontSize: 18, color: Colors.blue),
+                      ),
+                      onTap: () async {
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime(2100),
+                        );
+                        if (pickedDate != null && pickedDate != selectedDate) {
+                          setState(() {
+                            selectedDate = pickedDate;
+                          });
+                        }
+                      },
+                    ),
+                  ],
                 ),
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2100),
-                  );
-                  if (pickedDate != null && pickedDate != selectedDate) {
-                    selectedDate = pickedDate;
-                  }
-                },
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                onEdit(Task(
-                  titleController.text,
-                  priorityController.text,
-                  task.isDone,
-                  selectedDate,
-                  task.category,
-                ));
-                Navigator.of(context).pop();
-              },
-              child: Text('Save Changes'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    if (titleController.text.isNotEmpty) {
+                      onEdit(Task(
+                        titleController.text,
+                        selectedPriority,
+                        task.isDone,
+                        selectedDate,
+                        selectedCategory,
+                      ));
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: Text('Save Changes'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Cancel'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
